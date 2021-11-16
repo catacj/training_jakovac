@@ -1,0 +1,103 @@
+---
+title: "Untitled"
+output: html_document
+bibliography: references.bib
+---
+R code chunk that do not show any code (echo=FALSE) or show it (echo=TRUE)
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Second level header
+
+### Third level header
+
+Plain paragraph text
+
+A new paragraph, this is not a new line.
+
+#### Shopping list
+
+**Fruits**
+
+1.  apple
+2.  *kiwi*
+3.  banana
+
+*latex equation* $\sum{x_n + 3}$
+
+| Col1 | Col2 | Col3 |
+|------|------|------|
+|      |      |      |
+|      |      |      |
+|      |      |      |
+
+: Caption table
+
+*Insert citation* using the visual mode:
+
+[@jakovac2021]
+
+```{r}
+#open an R code chunk
+
+x<-2+2
+x
+
+```
+
+cntrl + alt + i (pc): for including r chunk
+
+cntrl + return (): for running
+
+```{r}
+x<-2*3
+y<-x*3
+y
+
+```
+
+```{r message=FALSE, warning=FALSE}
+#Include all package dependencies needed for your code in the top of your document. This makes it easier to work collaboratively. 
+
+library(readr)
+library(dplyr)
+
+```
+
+# Introduction
+
+-   read in data
+
+```{r read-data, message=FALSE, warning=FALSE}
+bg_chem<-read_csv("Data/BGchem2008data.csv", show_col_types = FALSE)
+names(bg_chem)
+
+```
+
+# Analysis
+
+-   calculate summary statistics
+```{r}
+nitrate<-mean(bg_chem$NO3)
+nitrite<-mean(bg_chem$NO2)
+amm<-mean(bg_chem$NH4)
+phos<-mean(bg_chem$P)
+
+```
+
+-   calculate mean redfield ratio
+
+```{r}
+ratio<-(nitrate + nitrite+ amm)/phos
+```
+
+The calculated Redfield ratio is `r round(ratio,2)`
+
+
+-   plot redfield ratio
+
+```{r}
+plot(bg_chem$P, bg_chem$NO2 + bg_chem$NO3 + bg_chem$NH4)
+```
+
