@@ -1,0 +1,112 @@
+---
+title: "Data tydying"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r message = FALSE}
+library(dplyr)
+library(tidyr)
+library(readr)
+```
+
+# Useful shortcuts in R Markdown
+
+ctrl alt i => short cut for R code chunck
+
+show_col_types= FALSE (to omitt message description of data when using read_csv)
+
+# Read in data
+
+## Open data from url direclty
+
+Data come from [Mike Byerly. Alaska commercial salmon catches by management region (1886- 1997). Gulf of Alaska Data Portal. df35b.304.2.](https://knb.ecoinformatics.org/view/df35b.304.2)
+
+```{r}
+catch_original<-read_csv("https://knb.ecoinformatics.org/knb/d1/mn/v2/object/df35b.302.1")
+
+head(catch_original)
+
+```
+# Clean and reshape data 
+
+Drop notes and all column
+
+```{r}
+catch_data <- catch_original %>% 
+  select(-All, -notesRegCode) 
+
+```
+
+Coerce Chinook column to be numeric instead of character
+
+```{r}
+
+catch_clean<-catch_data %>% 
+  mutate(Chinook= if_else(Chinook=="I", "1", Chinook)) %>% 
+  mutate(Chinook= as.numeric(Chinook))
+
+head(catch_clean)
+
+```
+
+## Examine NA values
+
+```{r}
+
+i<-which(is.na(catch_clean$Chinook)) # pick up NA
+i
+catch_original[i,] #this line had a character (wrongly) instead of a number, so when we make is.numeric() above, it includes NA in this location.  
+
+```
+
+
+```{r}
+catch_long<- catch_clean %>% 
+  pivot_longer(cols = -c(Region, Year), names_to = "species", values_to = "catch")
+```
+
+```{r}
+catch_long<-catch_long %>% 
+  rename(catch_thousands = catch) %>% 
+  mutate(catch = catch_thousands*1000) 
+```
+
+### Split-apply-combine
+
+```{r}
+mean_region<- catch_long %>% 
+  group_by(Region) %>% 
+  summarise(catch_mean = mean(catch), 
+            n = n())#counts the number of rows within each group
+
+mean_region
+```
+
+### Try out grouping and summarise
+
+```{r}
+catch_long
+
+mean_year<-catch_long %>% 
+  filter(Year>1881) %>% 
+  group_by(Year, Region) %>% 
+  summarise(mean_catch = mean(catch)) %>% 
+  pivot_wider(id_cols = NULL, names_from = Region, values_from = mean_catch) %>% 
+  arrange(Year) #ue a "-" before the -Year to order in descending order
+#summarise(mean_catch = mean(catch), .groups = "drop") => to ungroup 
+
+mean_year
+```
+
+
+
+
+```{r}
+
+
+```
+
