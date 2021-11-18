@@ -1,0 +1,78 @@
+---
+title: "Training-Visualization"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(leaflet)
+library(dplyr)
+library(tidyr)
+  library(ggplot2)
+  library(DT)
+  library(scales)
+```
+
+# Read url and trycatch
+
+
+```{r}
+data_url <- "https://knb.ecoinformatics.org/knb/d1/mn/v2/object/urn%3Auuid%3Af119a05b-bbe7-4aea-93c6-85434dcb1c5e"
+
+esc <- tryCatch(
+    read.csv("data/escapement.csv"),
+    error=function(cond) {
+        message(paste("Escapement file does not seem to exist, so get it from the KNB."))
+        esc <- read.csv(url(data_url, method = "libcurl"))
+        return(esc)
+    }
+)
+esc
+
+```
+
+Challenge: calculate escapement by species and region 
+
+```{r}
+annual_esc<- esc %>% 
+  separate(sampleDate, into = c("year", "month", "day"), sep="-") %>% 
+  mutate(year = as.numeric(year)) %>% 
+  filter(Species %in% c("Sockeye", "Chinook","Pink","Coho","Chum")) %>% 
+  group_by(Species, SASAP.Region, year) %>% 
+  summarise(escapement=sum(DailyCount))
+
+head(annual_esc)
+```
+
+
+```{r}
+ggplot(annual_esc, mapping = aes(x = Species, y = escapement)) +
+  geom_col(fill = "blue")
+```
+```{r}
+my_theme<-theme_classic()+
+  theme(legend.position = "bottom") # save a personalised theme by saving this function as a file (see file) and calling up "source()"
+
+source("my_theme.R")
+
+
+annual_esc %>% 
+  filter(SASAP.Region == "Kodiak") %>% 
+  ggplot(mapping = aes(x = year, y = escapement, color = Species)) +
+  geom_point() +
+  geom_line() +
+  scale_y_continuous(labels = comma)+ #comma is a function from the scale library, that label numbers in decimal format
+  my_theme
+```
+# Sources for themes and colours for ggplot: 
+
+patchwork / cowplot
+ggthemes
+Rcolorbrewer
+ggmarginal / ggside
+ggrides
+
+
