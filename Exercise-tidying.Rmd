@@ -1,0 +1,123 @@
+---
+title: "Exercise-tidying"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(rvest) #read html, to get info from websites
+library(readr)
+library(dplyr)
+library(janitor)
+library(ggplot2)
+```
+```{r}
+
+webpage <- read_html("https://www.pwrc.usgs.gov/bbl/manual/speclist.cfm")
+
+tbls <- html_nodes(webpage, "table") %>% 
+    html_table(fill = TRUE)
+
+species <- tbls[[1]] %>% 
+    clean_names() %>% #cleans up the spp names by replacing spaces by underscore, make everything lower case, etc 
+    select(alpha_code, common_name) %>% 
+    mutate(alpha_code = tolower(alpha_code))
+head(species)
+```
+
+
+# 2.Read the following two files into your environment.
+
+
+```{r}
+
+pred <- read_csv("https://arcticdata.io/metacat/d1/mn/v2/object/urn%3Auuid%3A9ffec04c-7e2d-41dd-9e88-b6c2e8c4375e")
+nest <- read_csv("https://arcticdata.io/metacat/d1/mn/v2/object/urn%3Auuid%3A982bd2fc-4edf-4da7-96ef-0d11b853102d")
+
+head(pred)
+head(nest)
+```
+
+
+# 3. Write a function that will translate species codes into common names.
+
+```{r}
+
+code_to_spp <- function(df1,species){
+ merged <- left_join(df1, species, by=c("species" = "alpha_code")) 
+   return(merged)
+}
+
+# make it general:
+code_to_spp1 <- function(df1,df2,x,y){
+ merged <- left_join(df1, df2, by=c(x = y)) 
+   return(merged)
+}
+
+
+head(pred)
+
+pred1 <- pred %>% 
+      rename(alpha_code=species) %>% 
+      left_join(., species, by=c("alpha_code"))
+
+head(pred1)
+
+# apply function:
+pred_coded <- code_to_spp(pred, species)
+head(pred_coded)
+
+
+# tests
+test <- code_to_spp(pred, species)
+
+test1 <- code_to_spp1(pred, species, pred$species, species$alpha_code)
+
+```
+
+
+# 4. Calculate total number of predators by year and species, and plot the result.
+
+```{r}
+head(pred)
+
+n.pred <- pred %>% 
+  group_by(year, species) %>% 
+  summarise(total = sum(count, na.rm=T))
+  
+names(n.pred)
+
+ggplot(n.pred, mapping = aes(x = year, y = total, color = species)) +
+  geom_line()
+
+```
+
+```
+
+
+# 5. Calculate total number of eggs predated by year and species.
+
+```{r}
+head(nest)
+head(pred)
+
+n.eggs <- nest %>% 
+  group_by(year, species) %>% 
+  mutate(count = as.numeric(count))
+  summarise(total = sum(count, na.rm=T))
+  
+names(n.pred)
+
+ggplot(n.pred, mapping = aes(x = year, y = total, color = species)) +
+  geom_line()
+
+```
+
+
+
+
+
+
